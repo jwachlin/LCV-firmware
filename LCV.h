@@ -1,6 +1,6 @@
 /**
  * @file LCV.h
- * @brief Firmware for AR Cart 
+ * @brief Firmware for Low Cost Ventilator
  */
 
 #ifndef LCV_h
@@ -24,26 +24,28 @@
 #define debug_println(x)
 #endif
 
-// Pins for blower motor control
+// Blower motor control
 #define BLDC_SPEED_CONTROL_PIN						(A0)
 #define BLDC_NTC_PIN								(A5)
 #define BLDC_ENABLE_PIN								(9)
 #define BLDC_READY_PIN								(10)
 
-// Pins for pressure sensing
-#define PRESSURE_1_PIN								(A1)
-#define PRESSURE_2_PIN								(A2)
-#define PRESSURE_3_PIN								(A3)
+// Pressure sensing
+#define NUM_PRESSURE_SENSORS						(3)
+#define PRESSURE_ACCURACY							(0.04)
+#define PRESSURE_0_PIN								(A1)
+#define PRESSURE_1_PIN								(A2)
+#define PRESSURE_2_PIN								(A3)
 
-// Pins for HMI
+// Human-machine interface
 #define CONTROL_POT_PIN								(A4)
 #define CONTROL_PUSHBUTTON_PIN						(5)
 #define CONTROL_START_PIN							(6)
 
-// Pins for FRAM 
+// FRAM high-speed non-volatile storage
 #define FRAM_CS_PIN									(13)
 
-// Pins for flow meter 
+// Mass flow meter 
 #define FLOW_METER_POWER_PIN						(4)
 
 // Alarm and safety control
