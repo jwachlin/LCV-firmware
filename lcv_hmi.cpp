@@ -8,6 +8,12 @@
 #include "LCV.h"
 #include "lcv_hmi.h"
 
+bool hmi_init(void)
+{
+    pinMode(CONTROL_PUSHBUTTON_PIN, INPUT_PULLDOWN); // TODO pullup?
+    pinMode(CONTROL_START_PIN, INPUT_PULLDOWN); // TODO pullup?
+}
+
 float read_portion_knob(void)
 {
     uint32_t raw_adc = analogRead(CONTROL_POT_PIN);
@@ -15,3 +21,12 @@ float read_portion_knob(void)
     float portion_range = (raw_adc / 4095.0);
     return portion_range;
 }
+
+bool is_button_start_on(void)
+{
+    return (digitalRead(CONTROL_START_PIN) == HIGH); // TODO pullup?
+}
+
+bool is_pushbotton_pressed(void)
+{
+    return (digitalRead(CONTROL_PUSHBUTTON_PIN) == HIGH);// TODO pullup?
