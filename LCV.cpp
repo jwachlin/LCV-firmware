@@ -11,3 +11,8 @@ bool initialize_hardware(void)
 {
 	// TODO
 }
+
+void lcv_task(void)
+{
+	
+}

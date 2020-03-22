@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <Arduino.h>
 
-
 #define LCV_DEBUG		(1)
 
 #ifdef LCV_DEBUG
@@ -54,5 +53,6 @@
 
 
 bool initialize_hardware(void);
+void lcv_task(void);
 
 #endif
