@@ -10,8 +10,8 @@
 
 bool hmi_init(void)
 {
-    pinMode(CONTROL_PUSHBUTTON_PIN, INPUT_PULLDOWN); // TODO pullup?
-    pinMode(CONTROL_START_PIN, INPUT_PULLDOWN); // TODO pullup?
+    pinMode(CONTROL_PUSHBUTTON_PIN, INPUT_PULLDOWN);
+    pinMode(CONTROL_START_PIN, INPUT_PULLDOWN);
 }
 
 float read_portion_knob(void)
@@ -24,9 +24,9 @@ float read_portion_knob(void)
 
 bool is_button_start_on(void)
 {
-    return (digitalRead(CONTROL_START_PIN) == HIGH); // TODO pullup?
+    return (digitalRead(CONTROL_START_PIN) == HIGH);
 }
 
 bool is_pushbotton_pressed(void)
 {
-    return (digitalRead(CONTROL_PUSHBUTTON_PIN) == HIGH);// TODO pullup?
+    return (digitalRead(CONTROL_PUSHBUTTON_PIN) == HIGH);
