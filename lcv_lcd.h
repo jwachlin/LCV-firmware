@@ -8,13 +8,13 @@
 #ifndef LCV_LCD_h
 #define LCV_LCD_h
 
-#define LCD_I2C_ADDRESS             (0x28) // not counting R/W bit
+#define LCD_I2C_ADDRESS                     (0x28) // not counting R/W bit
 
-#define LCD_WAKEUP_TIME_MS          (150)
-#define LCD_I2C_MAX_RATE            (50000)
+#define LCD_WAKEUP_TIME_MS                  (150)
+#define LCD_I2C_MAX_RATE                    (50000)
 
 /* LCD supports 0x20 to 0x7F ASCII characters */
-#define LCD_PREFIX                  (0xFE)
+#define LCD_PREFIX                          (0xFE)
 
 #define LCD_COMMAND_DISPLAY_ON              (0x41)
 #define LCD_COMMAND_DISPLAY_OFF             (0x42)
