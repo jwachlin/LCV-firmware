@@ -17,6 +17,8 @@
 #define FRAM_OPCODE_READ        (0x03)
 #define FRAM_OPCODE_WRITE       (0x02)
 
+#define FRAM_TEST_ADDRESS       (0x0000)
+
 bool fram_init(void);
 bool fram_write_data(uint16_t address, uint8_t * data, uint16_t length);
 bool fram_read_data(uint16_t address, uint8_t * data, uint16_t length);

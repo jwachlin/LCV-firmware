@@ -4,14 +4,38 @@
  */
 
 #include <Arduino.h>
+#include <SPI.h>
 
 #include "LCV.h"
 #include "lcv_fram.h"
 
 bool fram_init(void)
 {
+    bool success = true;
     SPI.begin();
     digitalWrite(FRAM_CS_PIN, HIGH);
+
+    delay(100);
+
+    // Try to write/read
+    uint8_t dummy = 0x00;
+    fram_write_data(FRAM_TEST_ADDRESS, &dummy, 1);
+    dummy = 0x09;
+    fram_read_data(FRAM_TEST_ADDRESS, &dummy, 1);
+    if(dummy != 0x00)
+    {
+        success = false;
+    }
+    dummy = 0x12;
+    fram_write_data(FRAM_TEST_ADDRESS, &dummy, 1);
+    dummy = 0x09;
+    fram_read_data(FRAM_TEST_ADDRESS, &dummy, 1);
+    if(dummy != 0x12)
+    {
+        success = false;
+    }
+
+    return success;
 }
 
 bool fram_write_data(uint16_t address, uint8_t * data, uint16_t length)

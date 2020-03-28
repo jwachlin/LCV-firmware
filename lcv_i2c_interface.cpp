@@ -4,29 +4,29 @@
  */
 
 #include <Arduino.h>
-#include "Wire.h"
+#include <I2C_DMAC.h>
 
 #include "LCV.h"
 #include "lcv_i2c_interface.h"
 
 bool i2c_interface_init(void)
 {
-    Wire.begin(50000);
+    I2C.begin(50000, REG_ADDR_8BIT, PIO_SERCOM_ALT);
+    return true;
 }
 
-bool i2c_read_registers(uint8_t address, uint8_t register, uint8_t * data, uint32_t length, uint32_t timeout_ms)
+bool i2c_read_registers(uint8_t address, uint8_t reg, 
+uint8_t * data, uint32_t length, uint32_t timeout_ms)
 {
     bool success = true;
-    Wire.beginTransmission(address);
-    Wire.write(register);
-    Wire.endTransmission();
-
-    Wire.requestFrom(address, length);
     uint32_t start_time = millis();
-    while(Wire.available())
+    debug_println("setup 4");
+    I2C.readBytes(address, reg, data, length);
+    debug_println("setup 5");
+    while(I2C.readBusy)
     {
-        *(data++) = Wire.read(); // TODO is this blocking?
-        if(millis() > start_time + timeout_ms)
+        debug_println(".");
+        if((millis() - start_time) > timeout_ms)
         {
             success = false;
             break;
@@ -35,15 +35,19 @@ bool i2c_read_registers(uint8_t address, uint8_t register, uint8_t * data, uint3
     return success;
 }
 
-bool i2c_write_registers(uint8_t address, uint8_t register, uint8_t * data, uint32_t length, uint32_t timeout_ms)
+bool i2c_write_registers(uint8_t address, uint8_t reg, 
+uint8_t * data, uint32_t length, uint32_t timeout_ms)
 {
-    Wire.beginTransmission(address);
-    Wire.write(register);
-    for(uint32_t i = 0; i < length; i++)
+    bool success = true;
+    uint32_t start_time = millis();
+    I2C.writeBytes(address, reg, data, length);
+    while(I2C.writeBusy)
     {
-        Wire.write(data[i]);
+        if((millis() - start_time) > timeout_ms)
+        {
+            success = false;
+            break;
+        }
     }
-    Wire.endTransmission();
-    // TODO does anything here possibly block?
-    return true;
+    return success;
 }

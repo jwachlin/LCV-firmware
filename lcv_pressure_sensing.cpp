@@ -38,10 +38,28 @@ static bool get_single_pressure_sensor(uint8_t index, float * pressure_psi)
 
 bool pressure_sensor_interface_init(void)
 {
+    bool success = true;
     // Set to 12-bit ADC
     analogReadResolution(12);
     // Set to default 3.3V reference
     analogReference(AR_DEFAULT);
+
+    float pressure_values[NUM_PRESSURE_SENSORS];
+    int32_t i;
+    for(i = 0; i < NUM_PRESSURE_SENSORS; i++)
+    {
+        get_single_pressure_sensor(i, &pressure_values[i]);
+    }
+    float total_difference = abs(pressure_values[0] - pressure_values[1]);
+    total_difference += abs(pressure_values[0] - pressure_values[2]);
+    
+    // TODO what is the threshold
+    if(total_difference > 0.2)
+    {
+        success = false;
+    }
+
+    return success;
 }
 
 
