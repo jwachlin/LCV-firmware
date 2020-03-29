@@ -103,6 +103,7 @@ bool initialize_hardware(void)
 	settings.tidal_volume_liter = 0.37;
 	settings.peep_cm_h20 = 40;
 	settings.pip_cm_h20 = 8;
+	settings.breath_per_min = 30;
 	
 }
 
@@ -160,6 +161,15 @@ void lcv_task(void)
 	settings.enable = is_button_start_on();
 	display_status(&settings);
 
+	handle_hmi_input();
+
 	last_filtered_rate = filtered_rate;
 	last_time = current_time;
+}
+
+void update_settings(lcv_settings_t new_settings)
+{
+	settings.breath_per_min = new_settings.breath_per_min;
+	settings.peep_cm_h20 = new_settings.peep_cm_h20;
+	settings.pip_cm_h20 = new_settings.pip_cm_h20;
 }

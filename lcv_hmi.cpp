@@ -10,6 +10,18 @@
 #include "lcv_lcd.h"
 #include "lcv_hmi.h"
 
+static char buffer[SCREEN_BUFFER_SIZE];
+static char last_buffer[SCREEN_BUFFER_SIZE];
+
+static SETTINGS_INPUT_STAGE stage = STAGE_NONE;
+static lcv_settings_t settings_input;
+
+static const lcv_settings_t lower_settings_range = {.enable = 0, .tidal_volume_liter = 0.1,
+                    .peep_cm_h20 = 10, .pip_cm_h20 = 3, .breath_per_min = 6};
+
+static const lcv_settings_t upper_settings_range = {.enable = 0, .tidal_volume_liter = 2.5,
+                    .peep_cm_h20 = 60, .pip_cm_h20 = 30, .breath_per_min = 60};
+
 bool hmi_init(void)
 {
     pinMode(CONTROL_PUSHBUTTON_PIN, INPUT_PULLDOWN);
@@ -37,8 +49,7 @@ bool is_pushbotton_pressed(void)
 
 bool display_status(lcv_settings_t * settings)
 {
-    static char buffer[SCREEN_BUFFER_SIZE];
-    static char last_buffer[SCREEN_BUFFER_SIZE];
+    
     static bool first_cycle = true;
 
     for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
@@ -50,19 +61,47 @@ bool display_status(lcv_settings_t * settings)
     // TODO doesn't seem to support floats
     if(settings->enable)
     {
-        sprintf(&buffer[0], "VENT: ON");
+        sprintf(&buffer[0], "VENT:ON");
     }
     else
     {
-        sprintf(&buffer[0], "VENT: OFF");
+        sprintf(&buffer[0], "VENT:OFF");
     }
 
     uint32_t tidal_volume_ml = 1000.0 * settings->tidal_volume_liter;
-    sprintf(&buffer[10], "V: %i ml", tidal_volume_ml);
+    sprintf(&buffer[10], "V:%iml", tidal_volume_ml);
 
-    sprintf(&buffer[20], "PEEP: %i cmH20", settings->peep_cm_h20);
+    sprintf(&buffer[20], "PEEP:%icmH20", settings->peep_cm_h20);
 
-    sprintf(&buffer[40], "PIP: %i cmH20", settings->pip_cm_h20);
+    sprintf(&buffer[40], "PIP:%icmH20", settings->pip_cm_h20);
+
+    sprintf(&buffer[52], "BPM:%i", settings->breath_per_min);
+
+    // Fill in settings input display
+    for(int32_t i = 60; i < SCREEN_BUFFER_SIZE; i++)
+    {
+        buffer[i] = 0x20; // ASCII space
+    }
+    switch (stage)
+    {
+    case STAGE_NONE:
+        break;
+
+    case STAGE_BPM:
+        sprintf(&buffer[60], "SET BPM:%i", settings_input.breath_per_min);
+        break;
+
+    case STAGE_PEEP:
+        sprintf(&buffer[60], "SET PEEP:%icmH20", settings_input.peep_cm_h20);
+        break;
+
+    case STAGE_PIP:
+        sprintf(&buffer[60], "SET PIP:%icmH20", settings_input.pip_cm_h20);
+        break;
+        
+    default:
+        break;
+    }
 
     // Clear any trailing 0s from string creation as those are special characters on the LCD
     for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
@@ -94,4 +133,71 @@ bool display_status(lcv_settings_t * settings)
     }
 
     first_cycle = false;
+}
+
+void handle_hmi_input(void)
+{
+    static bool last_button_status = false;
+    // Check for stage change 
+    bool new_button_status = is_pushbotton_pressed();
+
+    if(!last_button_status && new_button_status)
+    {
+        debug_println("Settings mode stage change");
+        switch (stage)
+        {
+        case STAGE_NONE:
+            stage = STAGE_BPM;
+            break;
+
+        case STAGE_BPM:
+            stage = STAGE_PEEP;
+            break;
+
+        case STAGE_PEEP:
+            stage = STAGE_PIP;
+            break;
+
+        case STAGE_PIP:
+            // Save settings 
+            update_settings(settings_input);
+            stage = STAGE_NONE;
+            break;
+        
+        default:
+            stage = STAGE_NONE;
+            break;
+        }
+    }
+
+    // Handle the stage
+
+    float knob_portion = read_portion_knob();
+
+    switch (stage)
+    {
+    case STAGE_NONE:
+        break;
+
+    case STAGE_BPM:
+        settings_input.breath_per_min = (int32_t) lower_settings_range.breath_per_min + 
+        knob_portion * (upper_settings_range.breath_per_min - lower_settings_range.breath_per_min);
+        break;
+
+    case STAGE_PEEP:
+        settings_input.peep_cm_h20 = (int32_t) lower_settings_range.peep_cm_h20 + 
+        knob_portion * (upper_settings_range.peep_cm_h20 - lower_settings_range.peep_cm_h20);
+        break;
+
+    case STAGE_PIP:
+        settings_input.pip_cm_h20 = (int32_t) lower_settings_range.pip_cm_h20 + 
+        knob_portion * (upper_settings_range.pip_cm_h20 - lower_settings_range.pip_cm_h20);
+        break;
+        
+    default:
+        stage = STAGE_NONE;
+        break;
+    }
+
+    last_button_status = new_button_status;
 }
