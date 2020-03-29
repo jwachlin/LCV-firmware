@@ -12,10 +12,20 @@
 
 bool i2c_interface_init(void)
 {
-    Wire.begin();
-    Wire.setClock(10000);
+    // Setup I2C at <50khz for LCD
 
-    //SERCOM2->I2CM.BAUD.bit.BAUD = 6520800;//SERCOM_FREQ_REF / ( 2 * 20000) - 1 ; // SERCOM_FREQ_REF = 48M
+    Wire.begin();                                     // Set-up the I2C port
+    sercom2.disableWIRE();                            // Disable the I2C SERCOM
+
+    GCLK->PCHCTRL[23].bit.CHEN = 0; // 23 is SERCOM2
+    while(GCLK->PCHCTRL[23].bit.CHEN != 0);
+	GCLK->PCHCTRL[23].bit.GEN = 0x04;			// Generic clock generator 4
+	GCLK->PCHCTRL[23].bit.CHEN = 1;
+	while(GCLK->PCHCTRL[23].bit.CHEN != 1);
+
+    // TODO what is GCLK4 actually?
+    SERCOM2->I2CM.BAUD.bit.BAUD = 12000000 / (2 * 5000) - 1;   // Set the I2C clock rate slow
+    sercom2.enableWIRE();                             // Enable the I2C SERCOM  
 
     return true;
 }
@@ -60,7 +70,7 @@ uint8_t * data, uint32_t length, uint32_t timeout_ms)
     Wire.write(reg);
     for(int32_t i = 0; i < length; i++)
     {
-        Wire.write(reg);
+        Wire.write(*(data+i));
     }
     Wire.endTransmission();
 

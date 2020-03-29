@@ -14,17 +14,8 @@
 
 //CRC
 #define POLYNOMIAL 0x131 //P(x)=x^8+x^5+x^4+1 = 100110001
-//============================================================
-bool SMF3000_CheckCrc (uint8_t * data, uint8_t nbrOfBytes, uint8_t checksum)
-//============================================================
-//calculates checksum for n bytes of data
-//and compares it with expected checksum
-//input: data[] checksum is built based on this data
-// nbrOfBytes checksum is built for n bytes of data
-// checksum expected checksum
-//return: error: CHECKSUM_ERROR = checksum does not match
-// 0 = checksum matches
-//============================================================
+
+bool SMF3000_CheckCrc(uint8_t * data, uint8_t nbrOfBytes, uint8_t checksum)
 {
 uint8_t crc = 0;
 uint8_t byteCtr;

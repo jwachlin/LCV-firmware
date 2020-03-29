@@ -40,6 +40,6 @@
 #define LCD_COMMAND_DISP_I2C_ADDRESS        (0x72)
 
 bool lcd_init(void);
-bool set_character(uint8_t row, uint8_t column, char c);
+bool set_character(uint8_t row, uint8_t column, char * c);
 
 #endif

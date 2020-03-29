@@ -20,30 +20,43 @@ bool lcd_init(void)
     bool success = true;
     // Turn on display
     uint8_t disp_on_command = LCD_COMMAND_DISPLAY_ON; 
-    debug_println("lcd write");
     if(!i2c_write_registers(LCD_I2C_ADDRESS, 
             LCD_PREFIX, &disp_on_command, 1, 20))
     {
         success = false;
     }
 
+    set_character(1,1,"H");
+    set_character(1,2,"e");
+    set_character(1,3,"l");
+    set_character(1,4,"l");
+    set_character(1,5,"0");
+    set_character(1,6," ");
+    set_character(1,7,"W");
+    set_character(1,8,"o");
+    set_character(1,9,"r");
+    set_character(1,10,"l");
+    set_character(1,11,"d");
+
     // Show welcome screen TODO
-    uint8_t row = 1;
+    
+    /*uint8_t row = 1;
     uint8_t column = 1;
-    for(int i = 0; i < sizeof(*intro_screen); i++)
+    for(int i = 0; i < 19; i++)
     {
-        set_character(row, column, *(intro_screen+i));
+        debug_println(i);
+        set_character(row, column, (intro_screen+i));
         if((i-1) % 20 == 0 && i > 1)
         {
             column = 0;
             row+=1;
         }
-    }
+    }*/
 
     return success;
 }
 
-bool set_character(uint8_t row, uint8_t column, char c)
+bool set_character(uint8_t row, uint8_t column, char * c)
 {
     /*
                     Column 1    Column 20
@@ -90,7 +103,7 @@ bool set_character(uint8_t row, uint8_t column, char c)
     }
 
     uint8_t this_character = 0;
-    memcpy(&this_character, &c, 1);
+    memcpy(&this_character, c, 1);
     if(!i2c_write_registers(LCD_I2C_ADDRESS, 
             this_character, &command[0], 0, 20))
     {
