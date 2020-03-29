@@ -16,6 +16,7 @@
 #include "lcv_flow_sensor.h"
 
 static float flow_slm = 0.0;
+static lcv_settings_t settings;
 
 bool initialize_hardware(void)
 {
@@ -96,6 +97,12 @@ bool initialize_hardware(void)
 	{
 		debug_println("HMI setup failure");
 	}
+
+	// Initialize 
+	settings.enable = 0;
+	settings.tidal_volume_liter = 0.37;
+	settings.peep_cm_h20 = 40;
+	settings.pip_cm_h20 = 8;
 	
 }
 
@@ -143,11 +150,15 @@ void lcv_task(void)
 			debug_print(flow_volume);
 			debug_println("l");
 		}
+		settings.tidal_volume_liter = tidal_volume;
 		
 		flow_volume = 0.0;
 		tidal_volume = 0.0;
 		rising = true;
 	}
+
+	settings.enable = is_button_start_on();
+	display_status(&settings);
 
 	last_filtered_rate = filtered_rate;
 	last_time = current_time;

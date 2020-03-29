@@ -13,7 +13,7 @@
 #include "lcv_i2c_interface.h"
 #include "lcv_lcd.h"
 
-static char * intro_screen = "Low Cost Ventilator LOREM IPSUM FACTO This is a test #$@!%@ Does it wrap around properly?&*";
+static char * intro_screen = "Low Cost Ventilator";
 
 bool lcd_init(void)
 {
@@ -26,16 +26,34 @@ bool lcd_init(void)
         success = false;
     }
 
-    // Show welcome screen
-    
-    uint8_t row = 1;
-    uint8_t column = 1;
-    for(int i = 0; i < strlen(intro_screen); i++)
+    if(!set_backlight(2))
     {
-        debug_println(row);
-        debug_println(column);
-        debug_println(i);
-        set_character(row, column, (intro_screen+i));
+        success = false;
+    }
+    
+    if(!set_contrast(40))
+    {
+        success = false;
+    }
+
+    // Show welcome screen
+    set_string(1, 1, intro_screen, strlen(intro_screen));
+
+    return success;
+}
+
+bool set_string(uint8_t row, uint8_t column, char * c, uint8_t length)
+{
+    bool success = true;
+    if(row == 0 || row > 4 || column == 0 || column > 20)
+    {
+       success = false;
+       return success;
+    }
+
+    for(int i = 0; i < length; i++)
+    {
+        set_character(row, column, (c+i));
         column++;
         if(column > 20)
         {
@@ -43,7 +61,6 @@ bool lcd_init(void)
             row+=1;
         }
     }
-
     return success;
 }
 
@@ -101,4 +118,56 @@ bool set_character(uint8_t row, uint8_t column, char * c)
         success = false;
     }
     return success;
+}
+
+bool set_character_index(uint8_t panel_index, char * c)
+{
+    if(panel_index > 80 || panel_index < 1)
+    {
+        return false;
+    }
+    uint8_t row = 1;
+    uint8_t column = 1;
+    if(panel_index < 20)
+    {
+        row = 1;
+        column = panel_index;
+    }
+    else if(panel_index < 40)
+    {
+        row = 2;
+        column = panel_index - 20;
+    }
+    else if(panel_index < 60)
+    {
+        row = 3;
+        column = panel_index - 40;
+    }
+    else if(panel_index < 80)
+    {
+        row = 4;
+        column = panel_index - 60;
+    }
+    
+    set_character(row, column, c);
+}
+
+bool set_contrast(uint8_t level)
+{
+    if(level < 1 || level > 50)
+    {
+        return false;
+    }
+    uint8_t data_to_send[3] = {LCD_PREFIX, LCD_COMMAND_SET_CONTRAST, level};
+    return i2c_write_data(LCD_I2C_ADDRESS, data_to_send, 3, 10);
+}
+
+bool set_backlight(uint8_t level)
+{
+    if(level < 1 || level > 8)
+    {
+        return false;
+    }
+    uint8_t data_to_send[3] = {LCD_PREFIX, LCD_COMMAND_SET_BRIGHTNESS, level};
+    return i2c_write_data(LCD_I2C_ADDRESS, data_to_send, 3, 10);
 }
