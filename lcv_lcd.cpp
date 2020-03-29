@@ -20,6 +20,7 @@ bool lcd_init(void)
     bool success = true;
     // Turn on display
     uint8_t disp_on_command = LCD_COMMAND_DISPLAY_ON; 
+    debug_println("lcd write");
     if(!i2c_write_registers(LCD_I2C_ADDRESS, 
             LCD_PREFIX, &disp_on_command, 1, 20))
     {

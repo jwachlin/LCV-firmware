@@ -4,14 +4,18 @@
  */
 
 #include <Arduino.h>
-#include <I2C_DMAC.h>
+#include <Wire.h>
 
 #include "LCV.h"
 #include "lcv_i2c_interface.h"
 
 bool i2c_interface_init(void)
 {
-    I2C.begin(50000, REG_ADDR_8BIT, PIO_SERCOM_ALT);
+    Wire.begin();
+
+    //SERCOM2->I2C.CTRLA = 0;
+    SERCOM2->I2CM.BAUD.bit.BAUD = 6520800;//SERCOM_FREQ_REF / ( 2 * 20000) - 1 ; // SERCOM_FREQ_REF = 48M
+
     return true;
 }
 
@@ -20,18 +24,28 @@ uint8_t * data, uint32_t length, uint32_t timeout_ms)
 {
     bool success = true;
     uint32_t start_time = millis();
-    debug_println("setup 4");
-    I2C.readBytes(address, reg, data, length);
-    debug_println("setup 5");
-    while(I2C.readBusy)
+    
+    Wire.beginTransmission(address);
+    Wire.write(reg);
+    Wire.endTransmission();
+    
+    Wire.requestFrom(address, length);
+
+    int32_t count = 0;
+    while(count < length)
     {
-        debug_println(".");
-        if((millis() - start_time) > timeout_ms)
+        if(Wire.available())
+        {
+            *(data+count) = Wire.read();
+            count++;
+        }
+        if( (millis()-start_time) > timeout_ms )
         {
             success = false;
             break;
         }
     }
+
     return success;
 }
 
@@ -40,14 +54,14 @@ uint8_t * data, uint32_t length, uint32_t timeout_ms)
 {
     bool success = true;
     uint32_t start_time = millis();
-    I2C.writeBytes(address, reg, data, length);
-    while(I2C.writeBusy)
+    
+    Wire.beginTransmission(address);
+    Wire.write(reg);
+    for(int32_t i = 0; i < length; i++)
     {
-        if((millis() - start_time) > timeout_ms)
-        {
-            success = false;
-            break;
-        }
+        Wire.write(reg);
     }
+    Wire.endTransmission();
+
     return success;
 }
