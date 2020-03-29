@@ -9,12 +9,13 @@
 #include "LCV.h"
 #include "lcv_i2c_interface.h"
 
+
 bool i2c_interface_init(void)
 {
     Wire.begin();
+    Wire.setClock(10000);
 
-    //SERCOM2->I2C.CTRLA = 0;
-    SERCOM2->I2CM.BAUD.bit.BAUD = 6520800;//SERCOM_FREQ_REF / ( 2 * 20000) - 1 ; // SERCOM_FREQ_REF = 48M
+    //SERCOM2->I2CM.BAUD.bit.BAUD = 6520800;//SERCOM_FREQ_REF / ( 2 * 20000) - 1 ; // SERCOM_FREQ_REF = 48M
 
     return true;
 }
@@ -63,5 +64,40 @@ uint8_t * data, uint32_t length, uint32_t timeout_ms)
     }
     Wire.endTransmission();
 
+    return success;
+}
+
+bool i2c_read_data(uint8_t address, uint8_t * data, uint32_t length, uint32_t timeout_ms)
+{
+    bool success = true;
+    uint32_t start_time = millis();
+    Wire.requestFrom(address, length);
+    int32_t count = 0;
+    while(count < length)
+    {
+        if(Wire.available())
+        {
+            data[count] = Wire.read();
+            count++;
+        }
+        if( (millis()-start_time) > timeout_ms )
+        {
+            success = false;
+            break;
+        }
+    }
+    return success;
+}
+
+bool i2c_write_data(uint8_t address, uint8_t * data, uint32_t length, uint32_t timeout_ms)
+{
+    bool success = true;
+
+    Wire.beginTransmission(address);
+    for(int32_t i = 0; i < length; i++)
+    {
+        Wire.write(*(data+i));
+    }
+    Wire.endTransmission();
     return success;
 }
