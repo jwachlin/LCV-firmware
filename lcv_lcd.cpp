@@ -13,7 +13,7 @@
 #include "lcv_i2c_interface.h"
 #include "lcv_lcd.h"
 
-static char * intro_screen = "Low Cost Ventilator";
+static char * intro_screen = "Low Cost Ventilator LOREM IPSUM FACTO This is a test #$@!%@ Does it wrap around properly?&*";
 
 bool lcd_init(void)
 {
@@ -26,32 +26,23 @@ bool lcd_init(void)
         success = false;
     }
 
-    set_character(1,1,"H");
-    set_character(1,2,"e");
-    set_character(1,3,"l");
-    set_character(1,4,"l");
-    set_character(1,5,"0");
-    set_character(1,6," ");
-    set_character(1,7,"W");
-    set_character(1,8,"o");
-    set_character(1,9,"r");
-    set_character(1,10,"l");
-    set_character(1,11,"d");
-
-    // Show welcome screen TODO
+    // Show welcome screen
     
-    /*uint8_t row = 1;
+    uint8_t row = 1;
     uint8_t column = 1;
-    for(int i = 0; i < 19; i++)
+    for(int i = 0; i < strlen(intro_screen); i++)
     {
+        debug_println(row);
+        debug_println(column);
         debug_println(i);
         set_character(row, column, (intro_screen+i));
-        if((i-1) % 20 == 0 && i > 1)
+        column++;
+        if(column > 20)
         {
-            column = 0;
+            column = 1;
             row+=1;
         }
-    }*/
+    }
 
     return success;
 }
