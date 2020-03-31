@@ -47,5 +47,6 @@ bool is_button_start_on(void);
 bool is_pushbotton_pressed(void);
 bool display_status(lcv_settings_t * settings);
 void handle_hmi_input(void);
+void update_full_screen_fast(void);
 
 #endif

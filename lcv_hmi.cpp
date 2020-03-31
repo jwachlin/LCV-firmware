@@ -13,6 +13,8 @@
 static char buffer[SCREEN_BUFFER_SIZE];
 static char last_buffer[SCREEN_BUFFER_SIZE];
 
+static uint8_t screen_buffer_reformatted[SCREEN_BUFFER_SIZE];
+
 static SETTINGS_INPUT_STAGE stage = STAGE_NONE;
 static lcv_settings_t settings_input;
 
@@ -78,10 +80,6 @@ bool display_status(lcv_settings_t * settings)
     sprintf(&buffer[52], "BPM:%i", settings->breath_per_min);
 
     // Fill in settings input display
-    for(int32_t i = 60; i < SCREEN_BUFFER_SIZE; i++)
-    {
-        buffer[i] = 0x20; // ASCII space
-    }
     switch (stage)
     {
     case STAGE_NONE:
@@ -112,6 +110,9 @@ bool display_status(lcv_settings_t * settings)
         }
     }
 
+    update_full_screen_fast();
+    /*
+
     if(first_cycle)
     {
         set_string(1,1,&buffer[0],SCREEN_BUFFER_SIZE);
@@ -132,7 +133,7 @@ bool display_status(lcv_settings_t * settings)
         last_buffer[i] = buffer[i];
     }
 
-    first_cycle = false;
+    first_cycle = false;*/
 }
 
 void handle_hmi_input(void)
@@ -200,4 +201,14 @@ void handle_hmi_input(void)
     }
 
     last_button_status = new_button_status;
+}
+
+void update_full_screen_fast(void)
+{
+    // Reformat data in 20 byte chunks to match what screen needs
+    memcpy(&screen_buffer_reformatted[0], &buffer[0], 20);
+    memcpy(&screen_buffer_reformatted[20], &buffer[40], 20);
+    memcpy(&screen_buffer_reformatted[40], &buffer[20], 20);
+    memcpy(&screen_buffer_reformatted[60], &buffer[60], 20);
+    set_screen(&screen_buffer_reformatted[0]);
 }

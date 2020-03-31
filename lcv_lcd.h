@@ -43,6 +43,7 @@ bool lcd_init(void);
 bool set_string(uint8_t row, uint8_t column, char * c, uint8_t length);
 bool set_character(uint8_t row, uint8_t column, char * c);
 bool set_character_index(uint8_t panel_index, char * c);
+bool set_screen(uint8_t * buffer);
 bool set_contrast(uint8_t level);
 bool set_backlight(uint8_t level);
 

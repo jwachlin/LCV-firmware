@@ -24,7 +24,7 @@ bool i2c_interface_init(void)
 	while(GCLK->PCHCTRL[23].bit.CHEN != 1);
 
     // TODO what is GCLK4 actually?
-    SERCOM2->I2CM.BAUD.bit.BAUD = 48000000 / (50000) - 1;   // Set the I2C clock rate slow
+    SERCOM2->I2CM.BAUD.bit.BAUD = 630;//48000000 / (50000) - 1;   // Set the I2C clock rate slow
     sercom2.enableWIRE();                             // Enable the I2C SERCOM  
 
     return true;

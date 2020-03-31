@@ -152,6 +152,49 @@ bool set_character_index(uint8_t panel_index, char * c)
     set_character(row, column, c);
 }
 
+bool set_screen(uint8_t * buffer)
+{
+    // Data should already be reformatted based on line breaks
+    // Otherwise it will be split up 
+    // Wire library can only do 32 byte chunks at a time
+    bool success = true;
+
+    uint8_t command[2] = {LCD_COMMAND_SET_CURSOR, 0x00};
+    if(!i2c_write_registers(LCD_I2C_ADDRESS, 
+            LCD_PREFIX, &command[0], 2, 5))
+    {
+        success = false;
+    }
+    
+    if( success && !i2c_write_data(LCD_I2C_ADDRESS, (buffer+0),32,10) )
+    {
+        success = false;
+    }
+    if( success && !i2c_write_data(LCD_I2C_ADDRESS, (buffer+32),8,10) )
+    {
+        success = false;
+    }
+
+    command[0] = LCD_COMMAND_SET_CURSOR;
+    command[1] = 0x40;
+    if(success && !i2c_write_registers(LCD_I2C_ADDRESS, 
+            LCD_PREFIX, &command[0], 2, 5))
+    {
+        success = false;
+    }
+    
+
+    if( success && !i2c_write_data(LCD_I2C_ADDRESS, (buffer+40),32,30) )
+    {
+        success = false;
+    }
+    if( success && !i2c_write_data(LCD_I2C_ADDRESS, (buffer+72),8,30) )
+    {
+        success = false;
+    }
+    return success;
+}
+
 bool set_contrast(uint8_t level)
 {
     if(level < 1 || level > 50)
