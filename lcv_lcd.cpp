@@ -131,22 +131,22 @@ bool set_character_index(uint8_t panel_index, char * c)
     if(panel_index < 20)
     {
         row = 1;
-        column = panel_index;
+        column = panel_index+1;
     }
     else if(panel_index < 40)
     {
         row = 2;
-        column = panel_index - 20;
+        column = panel_index - 19;
     }
     else if(panel_index < 60)
     {
         row = 3;
-        column = panel_index - 40;
+        column = panel_index - 39;
     }
     else if(panel_index < 80)
     {
         row = 4;
-        column = panel_index - 60;
+        column = panel_index - 59;
     }
     
     set_character(row, column, c);

@@ -22,5 +22,6 @@ bool flow_sensor_init(void);
 void power_cycle_flow_sensor(void);
 bool measure_flow_slm(float * flow_rate);
 bool read_serial_number(uint32_t * sn);
+bool get_tidal_volume(float * volume_liter);
 
 #endif

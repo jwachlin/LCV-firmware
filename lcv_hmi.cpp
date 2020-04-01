@@ -16,12 +16,12 @@ static char last_buffer[SCREEN_BUFFER_SIZE];
 static uint8_t screen_buffer_reformatted[SCREEN_BUFFER_SIZE];
 
 static SETTINGS_INPUT_STAGE stage = STAGE_NONE;
-static lcv_settings_t settings_input;
+static lcv_state_t settings_input;
 
-static const lcv_settings_t lower_settings_range = {.enable = 0, .tidal_volume_liter = 0.1,
+static const lcv_state_t lower_settings_range = {.enable = 0, .tidal_volume_liter = 0.1,
                     .peep_cm_h20 = 10, .pip_cm_h20 = 3, .breath_per_min = 6};
 
-static const lcv_settings_t upper_settings_range = {.enable = 0, .tidal_volume_liter = 2.5,
+static const lcv_state_t upper_settings_range = {.enable = 0, .tidal_volume_liter = 2.5,
                     .peep_cm_h20 = 60, .pip_cm_h20 = 30, .breath_per_min = 60};
 
 bool hmi_init(void)
@@ -49,7 +49,7 @@ bool is_pushbotton_pressed(void)
     return (digitalRead(CONTROL_PUSHBUTTON_PIN) == HIGH);
 }
 
-bool display_status(lcv_settings_t * settings)
+bool display_status(lcv_state_t * settings)
 {
     
     static bool first_cycle = true;
@@ -63,21 +63,21 @@ bool display_status(lcv_settings_t * settings)
     // TODO doesn't seem to support floats
     if(settings->enable)
     {
-        sprintf(&buffer[0], "VENT:ON");
+        snprintf(&buffer[0],9,"VENT:ON");
     }
     else
     {
-        sprintf(&buffer[0], "VENT:OFF");
+        snprintf(&buffer[0],9,"VENT:OFF");
     }
 
     uint32_t tidal_volume_ml = 1000.0 * settings->tidal_volume_liter;
-    sprintf(&buffer[10], "V:%iml", tidal_volume_ml);
+    snprintf(&buffer[10],10, "V:%iml", tidal_volume_ml);
 
-    sprintf(&buffer[20], "PEEP:%icmH20", settings->peep_cm_h20);
+    snprintf(&buffer[20],20, "PEEP:%icmH20", settings->peep_cm_h20);
 
-    sprintf(&buffer[40], "PIP:%icmH20", settings->pip_cm_h20);
+    snprintf(&buffer[40],13, "PIP:%icmH20", settings->pip_cm_h20);
 
-    sprintf(&buffer[52], "BPM:%i", settings->breath_per_min);
+    snprintf(&buffer[52],7, "BPM:%i", settings->breath_per_min);
 
     // Fill in settings input display
     switch (stage)
@@ -110,12 +110,9 @@ bool display_status(lcv_settings_t * settings)
         }
     }
 
-    update_full_screen_fast();
-    /*
-
     if(first_cycle)
     {
-        set_string(1,1,&buffer[0],SCREEN_BUFFER_SIZE);
+        update_full_screen_fast();
     }
 
     // Only update things that changed for reduced overhead
@@ -123,17 +120,16 @@ bool display_status(lcv_settings_t * settings)
     {
         if(last_buffer[i] != buffer[i])
         {
-            set_character_index(i+1, &buffer[i]);
+            set_character_index(i, &buffer[i]);
         }
     }
-    set_character(1,1,"V");
 
     for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
     {
         last_buffer[i] = buffer[i];
     }
 
-    first_cycle = false;*/
+    first_cycle = false;
 }
 
 void handle_hmi_input(void)

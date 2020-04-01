@@ -128,3 +128,52 @@ bool read_serial_number(uint32_t * sn)
 
     return success;
 }
+
+bool get_tidal_volume(float * volume_liter)
+{
+    static float flow_volume = 0.0;
+	static float tidal_volume = 0.0;
+	static float filtered_rate = 0.0;
+	static float last_filtered_rate = 0.0;
+	static bool rising = true;
+    static uint32_t last_time = 0;
+
+    uint32_t current_time = millis();
+    bool updated = false;
+
+    float flow_slm = 0.0;
+    measure_flow_slm(&flow_slm);
+	
+	float alpha = 0.7;
+	filtered_rate = (alpha)*filtered_rate + (1.0-alpha)*flow_slm;
+	float dt = 0.001 * (current_time - last_time);
+	flow_volume += flow_slm * (1.0/60.0) * 0.01;
+	tidal_volume += abs(flow_slm) * (1.0/60.0) * 0.01 * 0.5;
+	
+	if(rising && filtered_rate > 0.0 && last_filtered_rate <= 0.0)
+	{	
+		rising = false;
+	}
+	else if(!rising && filtered_rate < 0.0 && last_filtered_rate >= 0.0)
+	{
+		if(tidal_volume > 0.1)
+		{
+			debug_print("Tidal volume: ");
+			debug_print(tidal_volume);
+			debug_println("l");
+			debug_print("Net volume: ");
+			debug_print(flow_volume);
+			debug_println("l");
+		}
+		*volume_liter = tidal_volume;
+		
+		flow_volume = 0.0;
+		tidal_volume = 0.0;
+		updated = true;
+	}
+
+    last_filtered_rate = filtered_rate;
+	last_time = current_time;
+
+    return updated;
+}

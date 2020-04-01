@@ -6,6 +6,8 @@
 #ifndef LCV_HMI_h
 #define LCV_HMI_h
 
+#include "LCV.h"
+
 /*
 *   Display Layout
 *           Columns 1   .    .    .    .    .   20
@@ -32,20 +34,11 @@ typedef enum
     STAGE_PIP=3
 } SETTINGS_INPUT_STAGE;
 
-typedef struct 
-{
-    uint8_t enable : 1;
-    float tidal_volume_liter;
-    int32_t peep_cm_h20;
-    int32_t pip_cm_h20;
-    int32_t breath_per_min;
-} lcv_settings_t;
-
 bool hmi_init(void);
 float read_portion_knob(void);
 bool is_button_start_on(void);
 bool is_pushbotton_pressed(void);
-bool display_status(lcv_settings_t * settings);
+bool display_status(lcv_state_t * settings);
 void handle_hmi_input(void);
 void update_full_screen_fast(void);
 

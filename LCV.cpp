@@ -15,8 +15,9 @@
 #include "lcv_alarm_monitoring.h"
 #include "lcv_flow_sensor.h"
 
-static float flow_slm = 0.0;
-static lcv_settings_t settings;
+#define LOOP_RATE_HZ		(50)
+
+static lcv_state_t state;
 
 bool initialize_hardware(void)
 {
@@ -24,11 +25,9 @@ bool initialize_hardware(void)
 
 	#ifdef LCV_DEBUG
 	Serial.begin(115200);
-	#endif 
-	delay(1000);
-	
+	#endif 	
 
-	delay(1000); // Wait for sensors to boot
+	delay(200); // Wait for sensors to boot
 
 	// monitor setup
 	debug_println("Setting up FRAM");
@@ -99,77 +98,40 @@ bool initialize_hardware(void)
 	}
 
 	// Initialize 
-	settings.enable = 0;
-	settings.tidal_volume_liter = 0.37;
-	settings.peep_cm_h20 = 40;
-	settings.pip_cm_h20 = 8;
-	settings.breath_per_min = 30;
-	
+	state.enable = 0;
+	state.tidal_volume_liter = 0;
+	state.peep_cm_h20 = 40;
+	state.pip_cm_h20 = 8;
+	state.breath_per_min = 30;
+
+	delay(3000);
 }
 
 void lcv_task(void)
 {
-	static float flow_volume = 0.0;
-	static float tidal_volume = 0.0;
-	static float filtered_rate = 0.0;
-	static float last_filtered_rate = 0.0;
-	static bool rising = true;
-	static uint32_t last_time = 0;
-
-	// TODO setup actual task, for now test sensors only
-	delay(10);
-	if(measure_flow_slm(&flow_slm))
+	// TODO setup actual task
+	static uint32_t last_loop_time = 0;
+	while(millis() - last_loop_time < (1000/LOOP_RATE_HZ))
 	{
-		//debug_print("Flow rate, slm: ");
-		//debug_println(flow_slm);
-	}
-	else
-	{
-		debug_println("Flow sensor read failure");
 	}
 
-	uint32_t current_time = millis();
-	
-	float alpha = 0.7;
-	filtered_rate = (alpha)*filtered_rate + (1.0-alpha)*flow_slm;
-	float dt = 0.001 * (current_time - last_time);
-	flow_volume += flow_slm * (1.0/60.0) * 0.01;
-	tidal_volume += abs(flow_slm) * (1.0/60.0) * 0.01 * 0.5;
-	
-	if(rising && filtered_rate > 0.0 && last_filtered_rate <= 0.0)
-	{	
-		rising = false;
-	}
-	else if(!rising && filtered_rate < 0.0 && last_filtered_rate >= 0.0)
+	float tidal_volume_l = 0.0;
+	if(get_tidal_volume(&tidal_volume_l))
 	{
-		if(tidal_volume > 0.1)
-		{
-			debug_print("Tidal volume: ");
-			debug_print(tidal_volume);
-			debug_println("l");
-			debug_print("Net volume: ");
-			debug_print(flow_volume);
-			debug_println("l");
-		}
-		settings.tidal_volume_liter = tidal_volume;
-		
-		flow_volume = 0.0;
-		tidal_volume = 0.0;
-		rising = true;
+		state.tidal_volume_liter = tidal_volume_l;
 	}
 
-	settings.enable = is_button_start_on();
-	display_status(&settings);
+	state.enable = is_button_start_on();
+	display_status(&state);
 
 	handle_hmi_input();
 
-	last_filtered_rate = filtered_rate;
-	last_time = current_time;
+	last_loop_time = millis();
 }
 
-void update_settings(lcv_settings_t new_settings)
+void update_settings(lcv_state_t new_settings)
 {
-	settings.breath_per_min = new_settings.breath_per_min;
-	settings.peep_cm_h20 = new_settings.peep_cm_h20;
-	settings.pip_cm_h20 = new_settings.pip_cm_h20;
+	state.breath_per_min = new_settings.breath_per_min;
+	state.peep_cm_h20 = new_settings.peep_cm_h20;
+	state.pip_cm_h20 = new_settings.pip_cm_h20;
 }

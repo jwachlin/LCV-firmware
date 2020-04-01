@@ -9,8 +9,6 @@
 #include <stdint.h>
 #include <Arduino.h>
 
-#include "lcv_hmi.h"
-
 #define LCV_DEBUG		(1)
 
 #ifdef LCV_DEBUG
@@ -24,6 +22,15 @@
 #else
 #define debug_println(x)
 #endif
+
+typedef struct 
+{
+    uint8_t enable : 1;
+    float tidal_volume_liter;
+    int32_t peep_cm_h20;
+    int32_t pip_cm_h20;
+    int32_t breath_per_min;
+} lcv_state_t;
 
 // Blower motor control
 #define BLDC_SPEED_CONTROL_PIN						(A0)
@@ -56,6 +63,6 @@
 
 bool initialize_hardware(void);
 void lcv_task(void);
-void update_settings(lcv_settings_t new_settings);
+void update_settings(lcv_state_t new_settings);
 
 #endif
