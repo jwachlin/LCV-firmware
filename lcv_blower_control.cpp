@@ -8,8 +8,16 @@
 #include <math.h>
 
 #include "LCV.h"
+#include "lcv_alarm_monitoring.h"
 #include "lcv_blower_control.h"
 
+void motor_init(void)
+{
+    pinMode(BLDC_READY_PIN, INPUT_PULLDOWN);
+    pinMode(BLDC_ENABLE_PIN, OUTPUT);
+    
+    digitalWrite(BLDC_ENABLE_PIN, LOW);
+}
 
 void enable_motor(void)
 {
@@ -19,6 +27,11 @@ void enable_motor(void)
 void disable_motor(void)
 {
     digitalWrite(BLDC_ENABLE_PIN, LOW);
+}
+
+bool is_motor_ready(void)
+{
+    return (digitalRead(BLDC_READY_PIN) == HIGH);
 }
 
 void set_motor_speed_rpm(float speed_rpm)
@@ -45,4 +58,29 @@ float get_motor_temperature_c(void)
     float B = 1483.4 * log(R25 / R100);
 
     // TODO need params on motor
+    return 25.0;
+}
+
+void motor_task(lcv_state_t * state)
+{
+    // TODO run control
+
+    // Check for errors
+    if(get_motor_temperature_c() > 100.0)
+    {
+        set_alarm(ALARM_MOTOR_TEMP, true);
+    }
+    else
+    {
+        set_alarm(ALARM_MOTOR_TEMP, false);
+    }
+
+    if(!is_motor_ready())
+    {
+        set_alarm(ALARM_MOTOR_ERROR, true);
+    }
+    else
+    {
+        set_alarm(ALARM_MOTOR_ERROR, false);
+    }
 }

@@ -21,8 +21,6 @@ static lcv_state_t state;
 
 bool initialize_hardware(void)
 {
-	disable_motor();
-
 	#ifdef LCV_DEBUG
 	Serial.begin(115200);
 	#endif 	
@@ -30,6 +28,10 @@ bool initialize_hardware(void)
 	delay(200); // Wait for sensors to boot
 
 	// monitor setup
+	motor_init();
+	disable_motor();
+	alarm_monitoring_init();
+
 	debug_println("Setting up FRAM");
 	if(fram_init())
 	{
@@ -122,9 +124,9 @@ void lcv_task(void)
 	}
 
 	state.enable = is_button_start_on();
-	display_status(&state);
-
-	handle_hmi_input();
+	hmi_task(&state);
+	motor_task(&state);
+	alarm_monitoring_task();
 
 	last_loop_time = millis();
 }

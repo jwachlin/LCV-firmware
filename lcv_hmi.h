@@ -38,8 +38,10 @@ bool hmi_init(void);
 float read_portion_knob(void);
 bool is_button_start_on(void);
 bool is_pushbotton_pressed(void);
-bool display_status(lcv_state_t * settings);
+void hmi_task(lcv_state_t * settings);
+void update_main_buffer(lcv_state_t * settings);
 void handle_hmi_input(void);
-void update_full_screen_fast(void);
+void update_full_screen_fast(char * buff);
+bool update_alarm_buffer(void);
 
 #endif

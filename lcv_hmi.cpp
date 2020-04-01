@@ -8,10 +8,17 @@
 
 #include "LCV.h"
 #include "lcv_lcd.h"
+#include "lcv_alarm_monitoring.h"
 #include "lcv_hmi.h"
 
-static char buffer[SCREEN_BUFFER_SIZE];
-static char last_buffer[SCREEN_BUFFER_SIZE];
+#define ALARM_SCREEN_TOGGLE_MS      (2000)
+
+static char alarm_screen_buffer[SCREEN_BUFFER_SIZE];
+
+static char main_screen_buffer[SCREEN_BUFFER_SIZE];
+
+static char current_screen_buffer[SCREEN_BUFFER_SIZE];
+static char last_screen_buffer[SCREEN_BUFFER_SIZE];
 
 static uint8_t screen_buffer_reformatted[SCREEN_BUFFER_SIZE];
 
@@ -23,6 +30,41 @@ static const lcv_state_t lower_settings_range = {.enable = 0, .tidal_volume_lite
 
 static const lcv_state_t upper_settings_range = {.enable = 0, .tidal_volume_liter = 2.5,
                     .peep_cm_h20 = 60, .pip_cm_h20 = 30, .breath_per_min = 60};
+
+static void update_screen(void)
+{
+    static bool first_cycle = true;
+
+    // Clear any trailing 0s from string creation as those are special characters on the LCD
+    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
+    {
+        if(current_screen_buffer[i] < 0x07)
+        {
+            current_screen_buffer[i] = 0x20; // ASCII space
+        }
+    }
+
+    if(first_cycle)
+    {
+        update_full_screen_fast(current_screen_buffer);
+    }
+
+    // Only update things that changed for reduced overhead
+    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
+    {
+        if(last_screen_buffer[i] != current_screen_buffer[i])
+        {
+            set_character_index(i, &current_screen_buffer[i]);
+        }
+    }
+
+    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
+    {
+        last_screen_buffer[i] = current_screen_buffer[i];
+    }
+
+    first_cycle = false;
+}
 
 bool hmi_init(void)
 {
@@ -49,35 +91,63 @@ bool is_pushbotton_pressed(void)
     return (digitalRead(CONTROL_PUSHBUTTON_PIN) == HIGH);
 }
 
-bool display_status(lcv_state_t * settings)
+void hmi_task(lcv_state_t * settings)
 {
-    
-    static bool first_cycle = true;
+    static uint32_t last_change_time = 0;
+    static bool main_page = true;
 
+    handle_hmi_input();
+
+    uint32_t current_time = millis();
+
+    if(!main_page)
+    {
+        if(!update_alarm_buffer())
+        {
+            main_page = true;
+        }
+    }
+
+    if(main_page)
+    {
+        update_main_buffer(settings);
+    }
+
+    update_screen();
+
+    if((current_time - last_change_time) > ALARM_SCREEN_TOGGLE_MS)
+    {
+        main_page = !main_page;
+        last_change_time = current_time;
+    }
+}
+
+void update_main_buffer(lcv_state_t * settings)
+{
     for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
     {
-        buffer[i] = 0x20; // ASCII space
+        main_screen_buffer[i] = 0x20; // ASCII space
     }
 
     // Update info
     // TODO doesn't seem to support floats
     if(settings->enable)
     {
-        snprintf(&buffer[0],9,"VENT:ON");
+        snprintf(&main_screen_buffer[0],9,"VENT:ON");
     }
     else
     {
-        snprintf(&buffer[0],9,"VENT:OFF");
+        snprintf(&main_screen_buffer[0],9,"VENT:OFF");
     }
 
     uint32_t tidal_volume_ml = 1000.0 * settings->tidal_volume_liter;
-    snprintf(&buffer[10],10, "V:%iml", tidal_volume_ml);
+    snprintf(&main_screen_buffer[10],10, "V:%iml", tidal_volume_ml);
 
-    snprintf(&buffer[20],20, "PEEP:%icmH20", settings->peep_cm_h20);
+    snprintf(&main_screen_buffer[20],20, "PEEP:%icmH20", settings->peep_cm_h20);
 
-    snprintf(&buffer[40],13, "PIP:%icmH20", settings->pip_cm_h20);
+    snprintf(&main_screen_buffer[40],13, "PIP:%icmH20", settings->pip_cm_h20);
 
-    snprintf(&buffer[52],7, "BPM:%i", settings->breath_per_min);
+    snprintf(&main_screen_buffer[52],7, "BPM:%i", settings->breath_per_min);
 
     // Fill in settings input display
     switch (stage)
@@ -86,50 +156,22 @@ bool display_status(lcv_state_t * settings)
         break;
 
     case STAGE_BPM:
-        sprintf(&buffer[60], "SET BPM:%i", settings_input.breath_per_min);
+        sprintf(&main_screen_buffer[60], "SET BPM:%i", settings_input.breath_per_min);
         break;
 
     case STAGE_PEEP:
-        sprintf(&buffer[60], "SET PEEP:%icmH20", settings_input.peep_cm_h20);
+        sprintf(&main_screen_buffer[60], "SET PEEP:%icmH20", settings_input.peep_cm_h20);
         break;
 
     case STAGE_PIP:
-        sprintf(&buffer[60], "SET PIP:%icmH20", settings_input.pip_cm_h20);
+        sprintf(&main_screen_buffer[60], "SET PIP:%icmH20", settings_input.pip_cm_h20);
         break;
         
     default:
         break;
     }
-
-    // Clear any trailing 0s from string creation as those are special characters on the LCD
-    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
-    {
-        if(buffer[i] < 0x07)
-        {
-            buffer[i] = 0x20; // ASCII space
-        }
-    }
-
-    if(first_cycle)
-    {
-        update_full_screen_fast();
-    }
-
-    // Only update things that changed for reduced overhead
-    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
-    {
-        if(last_buffer[i] != buffer[i])
-        {
-            set_character_index(i, &buffer[i]);
-        }
-    }
-
-    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
-    {
-        last_buffer[i] = buffer[i];
-    }
-
-    first_cycle = false;
+    // copy to main buffer for update
+    memcpy(current_screen_buffer, main_screen_buffer, SCREEN_BUFFER_SIZE);
 }
 
 void handle_hmi_input(void)
@@ -199,12 +241,54 @@ void handle_hmi_input(void)
     last_button_status = new_button_status;
 }
 
-void update_full_screen_fast(void)
+void update_full_screen_fast(char * buff)
 {
     // Reformat data in 20 byte chunks to match what screen needs
-    memcpy(&screen_buffer_reformatted[0], &buffer[0], 20);
-    memcpy(&screen_buffer_reformatted[20], &buffer[40], 20);
-    memcpy(&screen_buffer_reformatted[40], &buffer[20], 20);
-    memcpy(&screen_buffer_reformatted[60], &buffer[60], 20);
+    memcpy(&screen_buffer_reformatted[0], &buff[0], 20);
+    memcpy(&screen_buffer_reformatted[20], &buff[40], 20);
+    memcpy(&screen_buffer_reformatted[40], &buff[20], 20);
+    memcpy(&screen_buffer_reformatted[60], &buff[60], 20);
     set_screen(&screen_buffer_reformatted[0]);
+}
+
+bool update_alarm_buffer(void)
+{
+    bool any_alarms = (get_alarm_bitfield() != 0);
+
+    for(int32_t i = 0; i < SCREEN_BUFFER_SIZE; i++)
+    {
+        alarm_screen_buffer[i] = 0x20; // ASCII space
+    }
+
+    snprintf(&alarm_screen_buffer[0],9,"ERRORS:");
+
+    if(check_alarm(ALARM_FLOW_SENSOR))
+    {
+        snprintf(&alarm_screen_buffer[10],10,"FLOW");
+    }
+
+    if(check_alarm(ALARM_PRESSURE_SENSOR))
+    {
+        snprintf(&alarm_screen_buffer[20],10,"PRES SNS");
+    }
+
+    if(check_alarm(ALARM_MOTOR_ERROR))
+    {
+        snprintf(&alarm_screen_buffer[30],10,"MOT FAIL");
+    }
+
+    if(check_alarm(ALARM_MOTOR_TEMP))
+    {
+        snprintf(&alarm_screen_buffer[40],10,"MOT TEMP");
+    }
+
+    if(check_alarm(ALARM_SETTINGS_LOAD))
+    {
+        snprintf(&alarm_screen_buffer[50],10,"SETT LOAD");
+    }
+
+    // Copy to screen buffer
+    memcpy(current_screen_buffer, alarm_screen_buffer, SCREEN_BUFFER_SIZE);
+
+    return any_alarms;
 }
